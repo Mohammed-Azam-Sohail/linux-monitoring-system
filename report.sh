@@ -45,7 +45,7 @@ REPORT_FILE="$(dirname "$0")/${REPORT_DIR}/report_${TIMESTAMP}.txt"
   echo ""
 
   echo "--- 8. Error Summary ---"
-  journalctl --since "today" 2>/dev/null | grep -ic "error\|fail" || echo "0"
+  journalctl --since "today" 2>/dev/null | grep -ic "error\|fail" || true
   echo ""
 
   echo "--- 9. TCP Statistics ---"
@@ -70,9 +70,18 @@ elif command -v gzip &>/dev/null; then
   gzip "$REPORT_FILE"
 fi
 
+# Email with attachment logic
 if [[ "$EMAIL_ENABLED" == "true" ]]; then
   if command -v mail &>/dev/null; then
-    echo "Daily report attached." | \
-      mail -s "${EMAIL_SUBJECT_PREFIX} Daily Report" "$EMAIL_RECIPIENT"
+    ATTACHMENT=""
+    [[ -f "${REPORT_FILE}.zip" ]] && ATTACHMENT="${REPORT_FILE}.zip"
+    [[ -f "${REPORT_FILE}.gz" ]] && ATTACHMENT="${REPORT_FILE}.gz"
+    
+    if [[ -n "$ATTACHMENT" ]]; then
+      echo "Daily report attached." | mail -a "$ATTACHMENT" -s "${EMAIL_SUBJECT_PREFIX} Daily Report" "$EMAIL_RECIPIENT"
+    else
+      # Fallback to inline text if compression failed
+      echo "Daily report attached." | mail -s "${EMAIL_SUBJECT_PREFIX} Daily Report" "$EMAIL_RECIPIENT" < "$REPORT_FILE"
+    fi
   fi
 fi

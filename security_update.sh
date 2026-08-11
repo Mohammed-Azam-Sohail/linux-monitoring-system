@@ -17,7 +17,11 @@ UPDATE_OUTPUT=""
 
 case "$DISTRO" in
   ubuntu|debian)
-    UPDATE_OUTPUT=$(sudo apt-get upgrade -y 2>&1) || SUCCESS=false
+    if command -v unattended-upgrade &>/dev/null; then
+      UPDATE_OUTPUT=$(sudo unattended-upgrade -d 2>&1) || SUCCESS=false
+    else
+      UPDATE_OUTPUT=$(sudo apt-get install --only-upgrade -y $(apt-get --just-print upgrade | awk '/-security/ {print $2}') 2>&1) || SUCCESS=false
+    fi
     ;;
   rhel|centos|rocky|almalinux)
     UPDATE_OUTPUT=$(sudo yum update --security -y 2>&1) || SUCCESS=false

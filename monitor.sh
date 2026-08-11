@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 # monitor.sh — Real-time system monitoring dashboard
 set -uo pipefail
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/config.cfg"
+
 mkdir -p "${SCRIPT_DIR}/${LOG_DIR}" "${SCRIPT_DIR}/${REPORT_DIR}"
 
-# color block
+# ANSI Color Constants
 RST="\033[0m"
 BOLD="\033[1m"
 RED="\033[1;31m"
@@ -41,6 +43,9 @@ status_label() {
 
 draw_bar() {
   local pct=${1%.*}
+  # Prevent bar logic breaking if pct is empty or non-numeric
+  [[ -z "$pct" || ! "$pct" =~ ^[0-9]+$ ]] && pct=0
+  
   local filled=$(( pct * 30 / 100 ))
   local empty=$(( 30 - filled ))
   printf '['
@@ -51,36 +56,43 @@ draw_bar() {
 
 get_cpu_usage() {
   local snap1
-  snap1=$(awk 'NR==1{print $2,$3,$4,$5,$6,$7,$8}' /proc/stat)
+  snap1=$(awk 'NR==1{print $2,$3,$4,$5,$6,$7,$8}' /proc/stat 2>/dev/null)
   local idle1=$(echo $snap1 | awk '{print $4}')
   local total1=$(echo $snap1 | awk '{print $1+$2+$3+$4+$5+$6+$7}')
 
   sleep 1
 
   local snap2
-  snap2=$(awk 'NR==1{print $2,$3,$4,$5,$6,$7,$8}' /proc/stat)
+  snap2=$(awk 'NR==1{print $2,$3,$4,$5,$6,$7,$8}' /proc/stat 2>/dev/null)
   local idle2=$(echo $snap2 | awk '{print $4}')
   local total2=$(echo $snap2 | awk '{print $1+$2+$3+$4+$5+$6+$7}')
 
   local dtotal=$((total2-total1))
   local didle=$((idle2-idle1))
-  printf "%.1f\n" "$(echo "scale=1; 100*($dtotal-$didle)/$dtotal" | bc -l)"
-}
 
+  if (( dtotal > 0 )); then
+    printf "%.1f\n" "$(echo "scale=1; 100*($dtotal-$didle)/$dtotal" | bc -l)"
+  else
+    echo "0.0"
+  fi
+}
 
 get_memory_usage() {
   local mem_info
-  mem_info=$(free -m | awk '/^Mem/{print $2,$3}')
+  mem_info=$(free -m 2>/dev/null | awk '/^Mem/{print $2,$3}')
 
   local total
   local used
   total=$(echo $mem_info | awk '{print $1}')
   used=$(echo $mem_info | awk '{print $2}')
 
-  local pct
-  pct=$(echo "scale=1; $used/$total*100" | bc -l)
-
-  echo "$pct|$used|$total"
+  if [[ -n "$total" && "$total" -gt 0 ]]; then
+    local pct
+    pct=$(echo "scale=1; $used/$total*100" | bc -l)
+    echo "$pct|$used|$total"
+  else
+    echo "0.0|0|0"
+  fi
 }
 
 get_disk_usage() {
@@ -99,63 +111,66 @@ get_disk_usage() {
 
 get_load_average() {
   local load
-  load=$(awk '{print $1}' /proc/loadavg)
+  load=$(awk '{print $1}' /proc/loadavg 2>/dev/null || echo "0.00")
   echo "$load"
 }
 
 get_network_speed() {
   local interface
-  interface=$(ip route | awk '/default/{print $5}' | head -1)
+  interface=$(ip route 2>/dev/null | awk '/default/{print $5}' | head -1)
+  [[ -z "$interface" ]] && interface="eth0"
 
-  local rx1 tx1
-  rx1=$(cat /sys/class/net/${interface}/statistics/rx_bytes)
-  tx1=$(cat /sys/class/net/${interface}/statistics/tx_bytes)
+  local rx1=0 tx1=0 rx2=0 tx2=0
+  if [[ -f "/sys/class/net/${interface}/statistics/rx_bytes" ]]; then
+    rx1=$(cat "/sys/class/net/${interface}/statistics/rx_bytes")
+    tx1=$(cat "/sys/class/net/${interface}/statistics/tx_bytes")
+  fi
 
   sleep 1
 
-  local rx2 tx2
-  rx2=$(cat /sys/class/net/${interface}/statistics/rx_bytes)
-  tx2=$(cat /sys/class/net/${interface}/statistics/tx_bytes)
+  if [[ -f "/sys/class/net/${interface}/statistics/rx_bytes" ]]; then
+    rx2=$(cat "/sys/class/net/${interface}/statistics/rx_bytes")
+    tx2=$(cat "/sys/class/net/${interface}/statistics/tx_bytes")
+  fi
 
-  local rx_speed tx_speed
-  rx_speed=$(( (rx2-rx1)/1024 ))
-  tx_speed=$(( (tx2-tx1)/1024 ))
+  local rx_speed=$(( (rx2-rx1)/1024 ))
+  local tx_speed=$(( (tx2-tx1)/1024 ))
 
   echo "$rx_speed|$tx_speed"
 }
 
 get_network_connections() {
   local connections
-  connections=$(ss -tun | tail -n +2 | wc -l)
+  connections=$(ss -tun 2>/dev/null | tail -n +2 | wc -l)
   echo "$connections"
 }
 
 get_error_rate() {
   local errors
-  errors=$(journalctl --since "5 min ago" 2>/dev/null | grep -ic "error\|fail\|critical")
-  echo "$errors"
+  errors=$(journalctl --since "5 min ago" 2>/dev/null | grep -ic "error\|fail\|critical" || true)
+  echo "${errors:-0}"
 }
-
 get_top_processes() {
-  ps -eo pid,comm,%cpu,%mem --sort=-%cpu | head -6
+  # Clean output without headers for sleek visual presentation
+  ps -eo pid,comm,%cpu,%mem --sort=-%cpu --no-headers 2>/dev/null | head -5
 }
 
 get_tcp_retransmissions() {
   local retrans
-  retrans=$(awk '/^Tcp/{print $13}' /proc/net/snmp | tail -1)
-  echo "$retrans"
+  retrans=$(awk '/^Tcp/{print $13}' /proc/net/snmp 2>/dev/null | tail -1)
+  echo "${retrans:-0}"
 }
 
 get_disk_io() {
   local io_info
-  io_info=$(iostat -d | grep -v "^$" | tail -1)
+  io_info=$(iostat -d 2>/dev/null | grep -v "^$" | tail -1)
 
   local read_speed
   local write_speed
   read_speed=$(echo $io_info | awk '{print $3}')
   write_speed=$(echo $io_info | awk '{print $4}')
 
-  echo "$read_speed|$write_speed"
+  echo "${read_speed:-0.00}|${write_speed:-0.00}"
 }
 
 trigger_alerts() {
@@ -165,12 +180,11 @@ trigger_alerts() {
 log_health() {
   local ts
   ts=$(date '+%Y-%m-%d %H:%M:%S')
-
   echo "$ts CPU=$1% MEM=$2% DISK=$3% LOAD=$4" >> "${SCRIPT_DIR}/${HEALTH_LOG}"
 }
 
 render_dashboard() {
-  clear
+  printf "\033[H"
 
   # ── Header ──────────────────────────────────────
   echo -e "${BOLD}${CYAN}"
@@ -269,6 +283,7 @@ render_dashboard() {
 
   # ── Top Processes ───────────────────────────────
   echo -e "${BOLD}Top Processes by CPU${RST}"
+  printf "  %-8s %-15s %-6s %-6s\n" "PID" "COMMAND" "%CPU" "%MEM"
   get_top_processes | while IFS= read -r line; do
     echo "  $line"
   done
@@ -278,13 +293,11 @@ render_dashboard() {
   echo -e "  ${CYAN}Refreshing every ${REFRESH_INTERVAL}s — Press Ctrl+C to stop${RST}"
 }
 
-
 # ── Main Loop ───────────────────────────────────────
 
 trap "echo -e '\n${GREEN}Dashboard stopped.${RST}'; exit 0" SIGINT SIGTERM
 
 LAST_HEALTH_LOG=0
-
 while true; do
   render_dashboard
 
