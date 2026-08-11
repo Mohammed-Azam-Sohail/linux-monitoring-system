@@ -291,6 +291,7 @@ render_dashboard() {
 
   # ── Footer ──────────────────────────────────────
   echo -e "  ${CYAN}Refreshing every ${REFRESH_INTERVAL}s — Press Ctrl+C to stop${RST}"
+  printf "\033[J"
 }
 
 # ── Main Loop ───────────────────────────────────────
@@ -298,6 +299,7 @@ render_dashboard() {
 trap "echo -e '\n${GREEN}Dashboard stopped.${RST}'; exit 0" SIGINT SIGTERM
 
 LAST_HEALTH_LOG=0
+clear
 while true; do
   render_dashboard
 
