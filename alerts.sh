@@ -10,7 +10,6 @@ LOAD="${4:-0}"
 
 ALERT_FILE="$(dirname "$0")/${ALERT_LOG}"
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-
 ALERTS_TRIGGERED=()
 
 check_threshold() {
@@ -18,11 +17,9 @@ check_threshold() {
   local val=$2
   local warn=$3
   local crit=$4
-
   if (( $(echo "$val >= $crit" | bc -l) )); then
     echo "[$TIMESTAMP] CRITICAL: $name = $val (warn=$warn, crit=$crit)" >> "$ALERT_FILE"
     ALERTS_TRIGGERED+=("CRITICAL: $name=$val")
-
   elif (( $(echo "$val >= $warn" | bc -l) )); then
     echo "[$TIMESTAMP] WARNING: $name = $val (warn=$warn, crit=$crit)" >> "$ALERT_FILE"
     ALERTS_TRIGGERED+=("WARNING: $name=$val")

@@ -184,7 +184,7 @@ log_health() {
 }
 
 render_dashboard() {
-  printf "\033[H"
+  clear
 
   # ── Header ──────────────────────────────────────
   echo -e "${BOLD}${CYAN}"
@@ -291,7 +291,6 @@ render_dashboard() {
 
   # ── Footer ──────────────────────────────────────
   echo -e "  ${CYAN}Refreshing every ${REFRESH_INTERVAL}s — Press Ctrl+C to stop${RST}"
-  printf "\033[J"
 }
 
 # ── Main Loop ───────────────────────────────────────
