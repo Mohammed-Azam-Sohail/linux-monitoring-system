@@ -1,0 +1,15 @@
+# Runtime logs
+logs/*.log
+logs/*.gz
+
+# Generated reports
+reports/*
+
+# Vim swap files
+*.swp
+*.swo
+*~
+
+# Secrets
+.env
+.env.*
