@@ -2,7 +2,7 @@
 set -uo pipefail
 
 source "$(dirname "$0")/config.cfg"
-
+mkdir -p "$(dirname "$0")/${LOG_DIR}" "$(dirname "$0")/${REPORT_DIR}"
 LOG_PATH="$(dirname "$0")/${LOG_DIR}"
 REPORT_PATH="$(dirname "$0")/${REPORT_DIR}"
 
@@ -33,7 +33,7 @@ for family in health_history alerts self_heal security_update; do
       rm -f "$f"
       echo "  Pruned: $f"
     fi
-  done < <(find "$LOG_PATH" -name "${family}*.gz" -print0 2>/dev/null | sort -rz)
+  done < <(find "$LOG_PATH" -name "${family}*.gz" -printf '%T@ %p\0' 2>/dev/null | sort -zrn | sed -z 's/^[^ ]* //')
 done
 
 # Phase 4: Clean old reports

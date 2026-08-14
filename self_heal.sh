@@ -50,7 +50,7 @@ for SERVICE in $CRITICAL_SERVICES; do
       log_msg "FAILED: Could not restart $SERVICE after $MAX_RESTART_RETRIES attempts."
       if [[ "$EMAIL_ENABLED" == "true" ]]; then
         if command -v mail &>/dev/null; then
-          echo "Service $SERVICE failed on $(hostname)" | \
+          echo "Service $SERVICE failed on $(hostname) at $(date '+%Y-%m-%d %H:%M:%S')" | \
             mail -s "${EMAIL_SUBJECT_PREFIX} Service failure: $SERVICE" "$EMAIL_RECIPIENT"
         fi
       fi
