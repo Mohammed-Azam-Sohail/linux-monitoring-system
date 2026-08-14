@@ -3,7 +3,7 @@ set -uo pipefail
 
 # Load config
 source "$(dirname "$0")/config.cfg"
-
+mkdir -p "$(dirname "$0")/${LOG_DIR}"
 LOG="$(dirname "$0")/${SECURITY_LOG}"
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 echo "[$TIMESTAMP] Starting security update..." | tee -a "$LOG"

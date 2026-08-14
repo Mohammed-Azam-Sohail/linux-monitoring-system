@@ -3,7 +3,7 @@ set -uo pipefail
 
 # Load config
 source "$(dirname "$0")/config.cfg"
-
+mkdir -p "$(dirname "$0")/${LOG_DIR}"
 # Log file
 LOG="$(dirname "$0")/${SELF_HEAL_LOG}"
 

@@ -2,6 +2,7 @@
 set -uo pipefail
 
 source "$(dirname "$0")/config.cfg"
+mkdir -p "$(dirname "$0")/${LOG_DIR}"
 
 CPU="${1:-0}"
 MEM="${2:-0}"
@@ -35,5 +36,12 @@ if [[ "$EMAIL_ENABLED" == "true" && ${#ALERTS_TRIGGERED[@]} -gt 0 ]]; then
   if command -v mail &>/dev/null; then
     echo "Alerts on $(hostname) at $TIMESTAMP" | \
       mail -s "${EMAIL_SUBJECT_PREFIX} Alert" "$EMAIL_RECIPIENT"
+  elif command -v sendmail &>/dev/null; then
+    {
+      echo "To: $EMAIL_RECIPIENT"
+      echo "Subject: ${EMAIL_SUBJECT_PREFIX} Alert"
+      echo
+      echo "Alerts on $(hostname) at $TIMESTAMP"
+    } | sendmail "$EMAIL_RECIPIENT"
   fi
 fi

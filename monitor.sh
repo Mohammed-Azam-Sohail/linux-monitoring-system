@@ -196,7 +196,7 @@ render_dashboard() {
   echo -e "${RST}"
 
   # ── CPU ─────────────────────────────────────────
-  local cpu
+  cpu=""
   cpu=$(get_cpu_usage)
   local col
   col=$(color_by_threshold "$cpu" "$CPU_WARN" "$CPU_CRIT")
@@ -206,31 +206,37 @@ render_dashboard() {
   echo -e " ${cpu}% ${RST} $(status_label "$cpu" "$CPU_WARN" "$CPU_CRIT")"
   echo ""
 
-  # ── Memory ──────────────────────────────────────
-  local mem_raw mem_pct mem_used mem_total
+
+  # Memory
+  local mem_raw mem_used mem_total
   mem_raw=$(get_memory_usage)
-  mem_pct=$(echo $mem_raw | cut -d'|' -f1)
-  mem_used=$(echo $mem_raw | cut -d'|' -f2)
-  mem_total=$(echo $mem_raw | cut -d'|' -f3)
-  col=$(color_by_threshold "$mem_pct" "$MEMORY_WARN" "$MEMORY_CRIT")
+  mem=$(echo "$mem_raw" | cut -d'|' -f1)
+  mem_used=$(echo "$mem_raw" | cut -d'|' -f2)
+  mem_total=$(echo "$mem_raw" | cut -d'|' -f3)
+  col=$(color_by_threshold "$mem" "$MEMORY_WARN" "$MEMORY_CRIT")
   echo -e "${BOLD}Memory Usage${RST}  (${mem_used}MB / ${mem_total}MB)"
   echo -en "  ${col}"
-  draw_bar "$mem_pct"
-  echo -e " ${mem_pct}% ${RST} $(status_label "$mem_pct" "$MEMORY_WARN" "$MEMORY_CRIT")"
+  draw_bar "$mem"
+  echo -e " ${mem}% ${RST} $(status_label "$mem" "$MEMORY_WARN" "$MEMORY_CRIT")"
   echo ""
 
-  # ── Disk Usage ──────────────────────────────────
+
+
+
+
   local disk_raw disk_pct disk_used disk_total
   disk_raw=$(get_disk_usage)
   disk_pct=$(echo $disk_raw | cut -d'|' -f1)
   disk_used=$(echo $disk_raw | cut -d'|' -f2)
   disk_total=$(echo $disk_raw | cut -d'|' -f3)
+  disk="$disk_pct"
   col=$(color_by_threshold "$disk_pct" "$DISK_WARN" "$DISK_CRIT")
   echo -e "${BOLD}Disk Usage  /  ${RST}  (${disk_used} / ${disk_total})"
   echo -en "  ${col}"
   draw_bar "$disk_pct"
   echo -e " ${disk_pct}% ${RST} $(status_label "$disk_pct" "$DISK_WARN" "$DISK_CRIT")"
   echo ""
+
 
   # ── Disk I/O ────────────────────────────────────
   local io_raw io_read io_write
@@ -242,7 +248,6 @@ render_dashboard() {
   echo ""
 
   # ── Load Average ────────────────────────────────
-  local load
   load=$(get_load_average)
   col=$(color_by_threshold "$load" "$LOAD_WARN" "$LOAD_CRIT")
   echo -e "${BOLD}Load Average${RST}"
@@ -302,10 +307,6 @@ clear
 while true; do
   render_dashboard
 
-  cpu=$(get_cpu_usage)
-  mem=$(get_memory_usage | cut -d'|' -f1)
-  disk=$(get_disk_usage | cut -d'|' -f1)
-  load=$(get_load_average)
 
   trigger_alerts "$cpu" "$mem" "$disk" "$load"
 

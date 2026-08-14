@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Use absolute path resolution
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
+mkdir -p "${SCRIPT_DIR}/logs"
 MARKER_START="# LINUX-MONITORING-SYSTEM-START"
 MARKER_END="# LINUX-MONITORING-SYSTEM-END"
 
