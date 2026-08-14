@@ -188,11 +188,11 @@ render_dashboard() {
 
   # ── Header ──────────────────────────────────────
   echo -e "${BOLD}${CYAN}"
-  echo "╔══════════════════════════════════════════╗"
-  echo "║       Linux System Monitor               ║"
-  echo "║       Host: $(hostname)                  ║"
-  echo "║       Time: $(date '+%Y-%m-%d %H:%M:%S') ║"
-  echo "╚══════════════════════════════════════════╝"
+  echo "══════════════════════════════════════════"
+  echo "       Linux System Monitor               "
+  echo "       Host: $(hostname)                  "
+  echo "       Time: $(date '+%Y-%m-%d %H:%M:%S') "
+  echo "══════════════════════════════════════════"
   echo -e "${RST}"
 
   # ── CPU ─────────────────────────────────────────
