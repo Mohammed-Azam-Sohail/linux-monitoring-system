@@ -1,35 +1,33 @@
 # Linux Monitoring & Auto-Maintenance System
 
-A Bash-based Linux monitoring and automation system designed to demonstrate practical Linux system administration, monitoring, alerting, service recovery, reporting, log management, security updates, and scheduled maintenance.
+A Bash-based Linux monitoring and automation system demonstrating practical Linux system administration, monitoring, alerting, service recovery, reporting, log management, security updates, and scheduled maintenance.
 
 > **Portfolio focus:** Linux / Bash / systemd / cron / automation / troubleshooting  
-> **Tested scope:** Linux (Ubuntu/Debian environment)  
+> **Tested scope:** Ubuntu/Debian Linux
 
 ---
 
 ## Overview
 
-This project provides a lightweight Linux monitoring and maintenance system built primarily with Bash and standard Linux utilities.
-
-The system combines:
+The system provides:
 
 - Real-time system monitoring
-- Configurable warning and critical thresholds
+- Configurable warning/critical thresholds
 - Automated alerting
-- Critical service self-healing
+- Critical-service self-healing
 - Daily system reports
 - Log retention and compression
 - Weekly maintenance
 - Security-update automation
 - Cron-based scheduling
 
-The project uses Linux-native interfaces and utilities such as `/proc`, `/sys`, `systemd`, `journalctl`, `ss`, `iostat`, and cron.
+Built using Linux-native interfaces and utilities including `/proc`, `/sys`, `systemd`, `journalctl`, `ss`, and `iostat`.
 
 ---
 
 ## Architecture
 
-
+```text
                          ┌─────────────────────────┐
                          │       monitor.sh        │
                          │   Real-time Dashboard   │
@@ -69,18 +67,17 @@ The project uses Linux-native interfaces and utilities such as `/proc`, `/sys`, 
           │                           │                           │
           ▼                           ▼                           ▼
       systemd                    reports/                log_rotation.sh
-                                      │                           │
-                                      │                           ▼
-                                      │                       logs/*.gz
-                                      │
-                                      ▼
-                              Generated Reports
+                                                              │
+                                                              ▼
+                                                          logs/*.gz
 
                               security_update.sh
                                       │
                                       ▼
                               Security Updates
+```
 
+---
 
 ## Features
 
@@ -91,10 +88,13 @@ The project uses Linux-native interfaces and utilities such as `/proc`, `/sys`, 
 - Log retention, compression and pruning
 - Weekly system maintenance and cleanup
 - Automated security updates
-- Cron-based scheduling for all recurring tasks
+- Cron-based scheduling
+
+---
 
 ## Project Structure
 
+```text
 linux-monitoring-system/
 ├── alerts.sh
 ├── config.cfg
@@ -107,7 +107,12 @@ linux-monitoring-system/
 ├── setup_cron.sh
 ├── logs/
 ├── reports/
+├── screenshots/
+│   └── normal--stressed.png
 └── README.md
+```
+
+---
 
 ## Tech Stack
 
@@ -120,6 +125,7 @@ linux-monitoring-system/
 - procfs / sysfs
 - Git
 
+---
 
 ## Configuration
 
@@ -133,6 +139,8 @@ Typical settings include:
 - Log retention and rotation limits
 - Email alert settings
 
+---
+
 ## Requirements
 
 - Linux (Ubuntu/Debian recommended)
@@ -140,32 +148,53 @@ Typical settings include:
 - `sysstat` (`iostat`)
 - `procps` (`top`, `free`, `ps`)
 - `iproute2` (`ss`)
-- `util-linux` (`find`, `logger`, etc.)
 - `cron`
 - `systemd`
 
 Optional:
-- `mail` / `sendmail` for email alerts
-- `zip` or `gzip` for report compression
-- `stress` for threshold/stress testing
+
+- `mail` / `sendmail` — email alerts
+- `zip` / `gzip` — report compression
+- `stress` — threshold testing
+
+---
 
 ## Installation
 
+```bash
 git clone https://github.com/Mohammed-Azam-Sohail/linux-monitoring-system.git
 cd linux-monitoring-system
 chmod +x *.sh
+```
 
-## Testing
+Run the dashboard:
+
+```bash
+./monitor.sh
+```
+
+Install scheduled jobs:
+
+```bash
+./setup_cron.sh
+```
+
+---
+
+## Testing Syntax
 
 All shell scripts were syntax-checked successfully:
+
+```bash
 for f in *.sh; do
     bash -n "$f" || exit 1
 done
+```
 
 ### Stress Testing
-
 The monitoring dashboard was tested using Linux `stress` to intentionally increase system load.
 When configured thresholds were breached:
+
 - Dashboard status changed from **NORMAL** to **WARNING/CRITICAL**
-- Corresponding metric indicators changed color
+- Metric indicators changed color also indicated in screenshots folder
 - Threshold-based alerts were triggered
