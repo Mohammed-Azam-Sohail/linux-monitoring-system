@@ -17,8 +17,6 @@ elif command -v yum &>/dev/null; then
 elif command -v dnf &>/dev/null; then
   sudo dnf update -y
   sudo dnf autoremove -y
-elif command -v pacman &>/dev/null; then
-  sudo pacman -Syu --noconfirm
 else
   echo "No supported package manager found."
 fi

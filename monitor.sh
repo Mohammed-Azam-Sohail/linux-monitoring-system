@@ -19,6 +19,8 @@ BG_RED="\033[41m"
 BG_YELLOW="\033[43m"
 BG_GREEN="\033[42m"
 
+# Args: $1=metric_value, $2=warning_threshold, $3=critical_threshold
+# Returns: ANSI color code (RED, YELLOW, or GREEN) depending on which threshold is exceeded.
 color_by_threshold() {
   local val=$1 warn=$2 crit=$3
   if (( $(echo "$val >= $crit" | bc -l) )); then
@@ -30,6 +32,8 @@ color_by_threshold() {
   fi
 }
 
+# Args: $1=metric_value, $2=warning_threshold, $3=critical_threshold
+# Returns: A formatted, color-coded status badge for the UI.
 status_label() {
   local val=$1 warn=$2 crit=$3
   if (( $(echo "$val >= $crit" | bc -l) )); then
@@ -43,16 +47,22 @@ status_label() {
 
 draw_bar() {
   local pct=${1%.*}
-  # Prevent bar logic breaking if pct is empty or non-numeric
-  [[ -z "$pct" || ! "$pct" =~ ^[0-9]+$ ]] && pct=0
-  
-  local filled=$(( pct * 30 / 100 ))
-  local empty=$(( 30 - filled ))
-  printf '['
-  for ((i=0; i<filled; i++)); do printf '█'; done
-  for ((i=0; i<empty; i++)); do printf '░'; done
-  printf ']'
+  pct=${pct:-0}
+  local width=30
+
+  (( pct > 100 )) && pct=100
+
+  local filled=$(( pct * width / 100 ))
+  local empty=$(( width - filled ))
+  local bar="["
+
+  for ((i=0; i<filled; i++)); do bar+="█"; done
+  for ((i=0; i<empty;  i++)); do bar+="░"; done
+
+  bar+="]"
+  echo -en "$bar"
 }
+
 
 get_cpu_usage() {
   local snap1
@@ -79,7 +89,7 @@ get_cpu_usage() {
 
 get_memory_usage() {
   local mem_info
-  mem_info=$(free -m 2>/dev/null | awk '/^Mem/{print $2,$3}')
+  mem_info=$(free -m | grep "Mem" | awk '{print $2, $3}')
 
   local total
   local used
@@ -95,6 +105,7 @@ get_memory_usage() {
   fi
 }
 
+
 get_disk_usage() {
   local disk_info
   disk_info=$(df -h / | awk 'NR==2{print $5,$3,$2}')
@@ -105,7 +116,6 @@ get_disk_usage() {
   pct=$(echo $disk_info | awk '{print $1}' | tr -d '%')
   used=$(echo $disk_info | awk '{print $2}')
   total=$(echo $disk_info | awk '{print $3}')
-
   echo "$pct|$used|$total"
 }
 
@@ -151,8 +161,7 @@ get_error_rate() {
   echo "${errors:-0}"
 }
 get_top_processes() {
-  # Clean output without headers for sleek visual presentation
-  ps -eo pid,comm,%cpu,%mem --sort=-%cpu --no-headers 2>/dev/null | head -5
+  ps -eo pid,comm,%cpu,%mem --sort=-%cpu 2>/dev/null | head -6
 }
 
 get_tcp_retransmissions() {
@@ -196,7 +205,6 @@ render_dashboard() {
   echo -e "${RST}"
 
   # ── CPU ─────────────────────────────────────────
-  cpu=""
   cpu=$(get_cpu_usage)
   local col
   col=$(color_by_threshold "$cpu" "$CPU_WARN" "$CPU_CRIT")
@@ -223,7 +231,7 @@ render_dashboard() {
 
 
 
-
+  # disk
   local disk_raw disk_pct disk_used disk_total
   disk_raw=$(get_disk_usage)
   disk_pct=$(echo $disk_raw | cut -d'|' -f1)
@@ -288,10 +296,7 @@ render_dashboard() {
 
   # ── Top Processes ───────────────────────────────
   echo -e "${BOLD}Top Processes by CPU${RST}"
-  printf "  %-8s %-15s %-6s %-6s\n" "PID" "COMMAND" "%CPU" "%MEM"
-  get_top_processes | while IFS= read -r line; do
-    echo "  $line"
-  done
+  get_top_processes
   echo ""
 
   # ── Footer ──────────────────────────────────────
@@ -306,7 +311,6 @@ LAST_HEALTH_LOG=0
 clear
 while true; do
   render_dashboard
-
 
   trigger_alerts "$cpu" "$mem" "$disk" "$load"
 

@@ -13,7 +13,6 @@ NEW_CRONS="${MARKER_START}
 59 23 * * * bash ${SCRIPT_DIR}/report.sh >> ${SCRIPT_DIR}/logs/report.log 2>&1
 0 0 * * * bash ${SCRIPT_DIR}/log_rotation.sh >> ${SCRIPT_DIR}/logs/rotation.log 2>&1
 0 2 * * 0 bash ${SCRIPT_DIR}/maintenance.sh >> ${SCRIPT_DIR}/logs/maintenance.log 2>&1
-0 3 * * 0 bash ${SCRIPT_DIR}/security_update.sh >> ${SCRIPT_DIR}/logs/security.log 2>&1
 ${MARKER_END}"
 
 CURRENT=$(crontab -l 2>/dev/null || true)
