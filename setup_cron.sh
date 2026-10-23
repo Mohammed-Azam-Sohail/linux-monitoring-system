@@ -19,3 +19,5 @@ CURRENT=$(crontab -l 2>/dev/null || true)
 CURRENT=$(printf '%s\n' "$CURRENT" | sed "/${MARKER_START}/,/${MARKER_END}/d")
 
 printf '%s\n%s\n' "$CURRENT" "$NEW_CRONS" | crontab -
+echo "Cron jobs installed successfully."
+crontab -l
