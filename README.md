@@ -153,3 +153,13 @@ When configured thresholds were breached:
 - Dashboard status changed from **NORMAL** to **WARNING/CRITICAL**
 - Metric indicators changed color also indicated in screenshots folder
 - Threshold-based alerts were triggered
+---
+### Summary
+- config.cfg — Configuration file; not run manually.
+- setup_cron.sh — Run manually once to install the scheduled jobs.
+- monitor.sh — Run manually when you want the live dashboard and continuous metric monitoring. It also records health_history.log.
+- alerts.sh — Triggered by monitor.sh and independently by cron every 5 minutes.
+- self_heal.sh — Automatically every 5 minutes via cron.
+- report.sh — Automatically daily at 11:59 PM via cron.
+- log_rotation.sh — Automatically daily at midnight via cron.
+- maintenance.sh — Automatically every Sunday at 2:00 AM via cron.
